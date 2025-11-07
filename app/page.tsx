@@ -5,15 +5,15 @@ import { getAllProducts, getProductByHandle } from '../../../lib/products';
 export const dynamic = 'force-static';
 
 export async function generateStaticParams() {
-  // returning a plain array is fine; Next will await it
-  return getAllProducts().map(p => ({ handle: p.Handle }));
+  return getAllProducts().map((p) => ({ handle: p.Handle }));
 }
 
-export default async function ProductPage(
-  { params }: { params: Promise<{ handle: string }> }
-) {
-  const { handle } = await params; // <-- important change
-  const product = getProductByHandle(handle);
+// Works with Next 14 (object) and Next 15 (Promise) params
+export default async function ProductPage({ params }: any) {
+  const awaited = typeof params?.then === 'function' ? await params : params;
+  const handle: string | undefined = awaited?.handle;
+
+  const product = handle ? getProductByHandle(handle) : undefined;
   if (!product) return notFound();
 
   return (
@@ -36,8 +36,14 @@ export default async function ProductPage(
           <div className="mt-2 text-2xl font-bold">${product.price.toFixed(2)}</div>
           <div className="mt-4 space-y-3 text-sm text-gray-700">
             <p>{product.Description_Short}</p>
-            <p><span className="font-medium">Includes:</span> {product.Components_Included}</p>
-            {product.sizeFt && <p><span className="font-medium">Size:</span> {product.sizeFt} ft</p>}
+            <p>
+              <span className="font-medium">Includes:</span> {product.Components_Included}
+            </p>
+            {product.sizeFt && (
+              <p>
+                <span className="font-medium">Size:</span> {product.sizeFt} ft
+              </p>
+            )}
           </div>
         </div>
       </div>
